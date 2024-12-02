@@ -61,4 +61,20 @@ class MADE():
         self.n_hidden = n_hidden
         self.out_features = out_features
 
-  masks,self.in_features=create_masks(in_features,hidden_features)
+        masks,self.in_features=create_masks(in_features,hidden_features)
+        self.net_input = MaskedLinear(in_features, hidden_features, masks[0])
+
+        self.net = []
+        for m in masks[1:-1]:
+            self.net.append(nn.ReLU())
+            self.net.append(MaskedLinear(hidden_features, hidden_features, m))
+
+        self.net.append(nn.ReLU())
+        self.net.append(MaskedLinear(hidden_features, out_features, masks[-1]))
+
+        self.net = nn.Sequential(*self.net)
+
+    def compute_loss(self, x, output, criterion):
+        # binary cross entropy loss
+        loss = criterion(output, x)
+        return {"loss": loss}
