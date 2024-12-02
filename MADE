@@ -74,7 +74,46 @@ class MADE():
 
         self.net = nn.Sequential(*self.net)
 
-    def compute_loss(self, x, output, criterion):
+  def compute_loss(self, x, output, criterion):
         # binary cross entropy loss
         loss = criterion(output, x)
         return {"loss": loss}
+  def process_batch(self, batch, criterion, device):
+        """
+        Process a batch of images through the normalizing flow.
+        Args:
+            batch: torch.Tensor, a batch of images
+            criterion: nn.Module, the loss function to use
+            device: str, the device to use
+        """
+        x = batch[0].to(device)
+        x = x.view(x.size(0), -1)
+
+        output = self.net(self.net_input(x))
+        loss = self.compute_loss(x, output, criterion)
+        return loss
+
+    def forward(self, x):
+        return self.net(x)
+
+    @torch.no_grad()
+    def generate(self, num_samples, device):
+        samples = torch.zeros(num_samples, self.in_features).to(device)
+        # autoregressive model, sample one pixel at a time
+        with torch.no_grad():
+            for i in range(self.in_features):
+                logits = self.net(self.net_input(samples))
+                probas = torch.sigmoid(logits)
+                pixel_i_samples = torch.bernoulli(probas[:, i])
+                samples[:, i] = pixel_i_samples
+
+        return samples.view(-1, 1, 28, 28)
+
+    def get_num_params(self):
+        return sum(p.numel() for p in self.parameters() if p.requires_grad)
+    
+    def everything_to(self, device):
+        pass
+
+    def reset_metric(self):
+        pass
