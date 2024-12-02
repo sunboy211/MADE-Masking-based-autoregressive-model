@@ -1,0 +1,20 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+
+class MaskedLinear(nn.Linear):
+  def __init__(self, in_features, out_features, mask, bias=True):
+    super().__init__(in_features, out_features, bias)
+    self.register_buffer('mask', mask)
+
+  def forward(self, x):
+        return F.linear(x, self.weight*self.mask, self.bias)
+
+class MADE():
+  def __init__(self, in_features, hidden_features, n_hidden, out_features):
+        super(MADE, self).__init__()
+        self.in_features = in_features
+        self.hidden_features = hidden_features
+        self.n_hidden = n_hidden
+        self.out_features = out_features
